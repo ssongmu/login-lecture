@@ -9,21 +9,26 @@ class User {
 
     async login() {
         const client = this.body;
+
+        try{
         const { id, psword } = await UserStorage.getUserInfo(client.id);
-        
         if (id) {
           if (id === client.id && psword === client.psword) {
                 return { success: true };
           }
         return { success: false, msg : "비밀번호가 틀렸습니다."};
+      }
+      return { success: false, msg : "일치하는 아이디가 없습니다."};
+    } catch (err) {
+      return { success: false, msg: err };
     }
-    return { success: false, msg : "일치하는 아이디가 없습니다."};
   }
 
      async register() {
       const client = this.body;
       try {
       const response = await UserStorage.save(client);
+      console.log(response);
       return response;
       } catch (err) {
         return { success : false, msg: err };

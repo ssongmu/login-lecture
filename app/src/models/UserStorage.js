@@ -1,6 +1,6 @@
 "use strict";
 
-const fs = require("fs").promises;
+const { sql, pool } = require("../config/db");
 
 class userStorage {
 
@@ -31,36 +31,33 @@ class userStorage {
     
 
     static getUsers(isAll, ...fields) {
-        return fs
-          .readFile("./src/databases/users.json")
-          .then((data) => {
-            return this.#getUsers(data, isAll, fields);
-          })
-          .catch(console.error);
     }
  
+    static async getUserInfo(id) {
+      return new Promise((resolve, reject) => {
 
-    static getUserInfo(id) {
-        return fs
-          .readFile("./src/databases/users.json")
-          .then((data) => {
-            return this.#getUserInfo(data, id);
-          })
-          .catch(console.error);
+        pool.request()
+        .input('input_id', sql.VarChar, id)
+        .query("SELECT * FROM _SMMember WHERE id = @input_id", (err, data) => {
+        if (err) reject(err);
+        resolve(data.recordset[0]);
+        
+        });
+      });
     }
 
     static async save(userInfo) {
-        const users = await this.getUsers(true); // 모든 데이터 가져오기
-        console.log(users);
+      return new Promise((resolve, reject) => {
 
-        if (users.id.includes(userInfo.id)) {
-          throw "이미 존재하는 아이디입니다.";
-        }
-        users.id.push(userInfo.id);
-        users.name.push(userInfo.name);
-        users.psword.push(userInfo.psword);
-        fs.writeFile("./src/databases/users.json", JSON.stringify(users));
-        return { success: true };
+        pool.request()
+        .input('input_id', sql.VarChar, userInfo.id)
+        .input('input_name', sql.VarChar, userInfo.name)
+        .input('input_psword', sql.VarChar, userInfo.psword)
+        .query("INSERT INTO _SMMember(id, name, psword) VALUES(@input_id, @input_name, @input_psword)", (err) => {
+        if (err) reject(err);
+        resolve( {success: true} );
+        });
+      });
     }
 }
 
